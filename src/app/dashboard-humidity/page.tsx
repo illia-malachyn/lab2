@@ -21,10 +21,17 @@ export default function DashboardHumidity() {
     const [loading, setLoading] = useState(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
+    console.log("API URL:", apiUrl);
+
     useEffect(() => {
         async function fetchData() {
             try {
-                const res = await fetch(`${apiUrl}/humiditysensors`);
+                if (!apiUrl) {
+                    setLoading(false);
+                    throw new Error("API URL is not set");
+                }
+
+                const res = await fetch(`${apiUrl}/humidity-sensors`);
                 if (!res.ok) throw new Error("Error fetching data");
 
                 const data = await res.json();

@@ -24,7 +24,12 @@ export default function DashboardLight() {
     useEffect(() => {
         async function fetchData() {
             try {
-                const res = await fetch(`${apiUrl}/lightsensors`);
+                if (!apiUrl) {
+                    setLoading(false);
+                    throw new Error("API URL is not set");
+                }
+
+                const res = await fetch(`${apiUrl}/light-sensors`);
                 if (!res.ok) throw new Error("Error fetching data");
 
                 const data = await res.json();

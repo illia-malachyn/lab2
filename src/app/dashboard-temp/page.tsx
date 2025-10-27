@@ -24,7 +24,12 @@ export default function DashboardTemp() {
     useEffect(() => {
         async function fetchData() {
             try {
-                const res = await fetch(`${apiUrl}/temperaturesensors`);
+                if (!apiUrl) {
+                    setLoading(false);
+                    throw new Error("API URL is not set");
+                }
+
+                const res = await fetch(`${apiUrl}/temperature-sensors`);
                 if (!res.ok) throw new Error("Error fetching data");
 
                 const data = await res.json();
@@ -44,7 +49,9 @@ export default function DashboardTemp() {
                 setLoading(false);
             }
         }
+
         fetchData();
+
         const interval = setInterval(fetchData, 10000);
         return () => clearInterval(interval);
     }, [apiUrl]);
@@ -65,4 +72,4 @@ export default function DashboardTemp() {
             </ResponsiveContainer>
         </div>
     );
-} 
+}
