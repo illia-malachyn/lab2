@@ -34,12 +34,11 @@ export default function DashboardTemp() {
 
                 const data = await res.json();
                 const formatted = data.map((item: any) => ({
-                    time: new
-                        Date(item.timestamp).toLocaleTimeString("uk-UA", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                        }),
+                    time: new Date(item.timestamp).toLocaleTimeString("uk-UA", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                    }),
                     value: item.value,
                 }));
                 setReadings(formatted);
@@ -59,17 +58,22 @@ export default function DashboardTemp() {
     if (loading) return <p>Завантаження даних...</p>;
 
     return (
-        <div className="w-full h-96">
-            <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={readings}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="value"
-                        stroke="#8884d8" />
-                </LineChart>
-            </ResponsiveContainer>
+        <div className="w-full p-4 bg-white rounded shadow">
+            <h3 className="text-lg font-semibold">Температура</h3>
+            <div className="w-full h-72 mt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={readings} margin={{ top: 10, right: 30, left: 40, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="time" label="time"/>
+                        <YAxis
+                            label={{ value: "Celsius", angle: -90, position: "insideLeft" }}
+                            domain={['auto', 'auto']}
+                        />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="value" stroke="#8884d8" />
+                    </LineChart>
+                </ResponsiveContainer>
+            </div>
         </div>
     );
 }
