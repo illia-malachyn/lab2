@@ -33,6 +33,7 @@ export default function DashboardTemp() {
     const [readings, setReadings] = useState<Reading[]>([]);
     const [loading, setLoading] = useState(true);
     const [alerts, setAlerts] = useState<TemperatureAlert[]>([]);
+    const [sseStatus, setSseStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
     useEffect(() => {
@@ -70,21 +71,42 @@ export default function DashboardTemp() {
     }, [apiUrl]);
 
     useEffect(() => {
-        if (!apiUrl) return;
+        if (!apiUrl) {
+            console.warn('[Temperature] API URL not set');
+            return;
+        }
 
-        const eventSource = new EventSource(`${apiUrl}/temperature-sensors/alerts`);
+        const url = `${apiUrl}/temperature-sensors/alerts`;
+        console.log('[Temperature] Connecting to SSE:', url);
+        setSseStatus('connecting');
+
+        const eventSource = new EventSource(url);
+
+        eventSource.onopen = () => {
+            console.log('[Temperature] SSE connection established');
+            setSseStatus('connected');
+        };
 
         eventSource.onmessage = (event) => {
-            const alert: TemperatureAlert = JSON.parse(event.data);
-            setAlerts((prev) => [alert, ...prev].slice(0, 5));
+            console.log('[Temperature] Alert received:', event.data);
+            try {
+                const alert: TemperatureAlert = JSON.parse(event.data);
+                console.log('[Temperature] Alert parsed:', alert);
+                setAlerts((prev) => [alert, ...prev].slice(0, 5));
+            } catch (e) {
+                console.error('[Temperature] Failed to parse alert:', e);
+            }
         };
 
         eventSource.onerror = (error) => {
-            console.error('SSE Error:', error);
+            console.error('[Temperature] SSE Error:', error);
+            console.error('[Temperature] ReadyState:', eventSource.readyState);
+            setSseStatus('error');
             eventSource.close();
         };
 
         return () => {
+            console.log('[Temperature] Closing SSE connection');
             eventSource.close();
         };
     }, [apiUrl]);
@@ -93,7 +115,23 @@ export default function DashboardTemp() {
 
     return (
         <div className="w-full p-4 bg-white rounded shadow">
-            <h3 className="text-lg font-semibold">Температура</h3>
+            <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold">Температура</h3>
+                <div className="flex items-center gap-2 text-sm">
+                    <div
+                        className={`w-2 h-2 rounded-full ${
+                            sseStatus === 'connected'
+                                ? 'bg-green-500'
+                                : sseStatus === 'connecting'
+                                ? 'bg-yellow-500'
+                                : 'bg-red-500'
+                        }`}
+                    ></div>
+                    <span className="text-gray-600">
+                        SSE: {sseStatus === 'connected' ? '✓ Connected' : sseStatus === 'connecting' ? '⟳ Connecting' : '✗ Error'}
+                    </span>
+                </div>
+            </div>
             
             {alerts.length > 0 && (
                 <div className="space-y-2 mb-4">

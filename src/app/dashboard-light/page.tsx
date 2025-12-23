@@ -33,6 +33,7 @@ export default function DashboardLight() {
     const [readings, setReadings] = useState<Reading[]>([]);
     const [loading, setLoading] = useState(true);
     const [alerts, setAlerts] = useState<LightAlert[]>([]);
+    const [sseStatus, setSseStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
     useEffect(() => {
@@ -68,21 +69,42 @@ export default function DashboardLight() {
     }, [apiUrl]);
 
     useEffect(() => {
-        if (!apiUrl) return;
+        if (!apiUrl) {
+            console.warn('[Light] API URL not set');
+            return;
+        }
 
-        const eventSource = new EventSource(`${apiUrl}/light-sensors/alerts`);
+        const url = `${apiUrl}/light-sensors/alerts`;
+        console.log('[Light] Connecting to SSE:', url);
+        setSseStatus('connecting');
+
+        const eventSource = new EventSource(url);
+
+        eventSource.onopen = () => {
+            console.log('[Light] SSE connection established');
+            setSseStatus('connected');
+        };
 
         eventSource.onmessage = (event) => {
-            const alert: LightAlert = JSON.parse(event.data);
-            setAlerts((prev) => [alert, ...prev].slice(0, 5));
+            console.log('[Light] Alert received:', event.data);
+            try {
+                const alert: LightAlert = JSON.parse(event.data);
+                console.log('[Light] Alert parsed:', alert);
+                setAlerts((prev) => [alert, ...prev].slice(0, 5));
+            } catch (e) {
+                console.error('[Light] Failed to parse alert:', e);
+            }
         };
 
         eventSource.onerror = (error) => {
-            console.error('SSE Error:', error);
+            console.error('[Light] SSE Error:', error);
+            console.error('[Light] ReadyState:', eventSource.readyState);
+            setSseStatus('error');
             eventSource.close();
         };
 
         return () => {
+            console.log('[Light] Closing SSE connection');
             eventSource.close();
         };
     }, [apiUrl]);
@@ -91,7 +113,23 @@ export default function DashboardLight() {
 
     return (
         <div className="w-full p-4 bg-white rounded shadow">
-            <h3 className="text-lg font-semibold">Яскравість світла</h3>
+            <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold">Яскравість світла</h3>
+                <div className="flex items-center gap-2 text-sm">
+                    <div
+                        className={`w-2 h-2 rounded-full ${
+                            sseStatus === 'connected'
+                                ? 'bg-green-500'
+                                : sseStatus === 'connecting'
+                                ? 'bg-yellow-500'
+                                : 'bg-red-500'
+                        }`}
+                    ></div>
+                    <span className="text-gray-600">
+                        SSE: {sseStatus === 'connected' ? '✓ Connected' : sseStatus === 'connecting' ? '⟳ Connecting' : '✗ Error'}
+                    </span>
+                </div>
+            </div>
             
             {alerts.length > 0 && (
                 <div className="space-y-2 mb-4">
