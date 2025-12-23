@@ -78,7 +78,7 @@ export default function DashboardLight() {
         console.log('[Light] Connecting to SSE:', url);
         setSseStatus('connecting');
 
-        const eventSource = new EventSource(url);
+        const eventSource = new EventSource(url, { withCredentials: true });
 
         eventSource.onopen = () => {
             console.log('[Light] SSE connection established');

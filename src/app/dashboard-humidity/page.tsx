@@ -78,7 +78,7 @@ export default function DashboardHumidity() {
         console.log('[Humidity] Connecting to SSE:', url);
         setSseStatus('connecting');
 
-        const eventSource = new EventSource(url);
+        const eventSource = new EventSource(url, { withCredentials: true });
 
         eventSource.onopen = () => {
             console.log('[Humidity] SSE connection established');

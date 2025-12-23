@@ -80,7 +80,7 @@ export default function DashboardTemp() {
         console.log('[Temperature] Connecting to SSE:', url);
         setSseStatus('connecting');
 
-        const eventSource = new EventSource(url);
+        const eventSource = new EventSource(url, { withCredentials: true });
 
         eventSource.onopen = () => {
             console.log('[Temperature] SSE connection established');
